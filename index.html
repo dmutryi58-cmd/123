@@ -1,0 +1,145 @@
+"use client";
+
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+import { QuizResults } from "./QuizResults";
+
+const questions = [
+  "Я выгляжу старше, чем я есть",
+  "Я трудно засыпаю ночью",
+  "Я просыпаюсь по ночам",
+  "Мне трудно заснуть снова, если я просыпаюсь ночью",
+  "В моей голове много мыслей, которые мешают мне заснуть",
+  "Мои ноги ночью горячие",
+  "Когда я просыпаюсь утром, я не чувствую себя отдохнувшим",
+  "Я чувствую, что я живу несинхронно с миром: ложусь слишком поздно и просыпаюсь слишком поздно",
+  "Я не переношу сдвиги во времени",
+  "Я курю, пью или использую бета-блокаторы или снотворное",
+];
+
+const answerOptions = [
+  { label: "Никогда", value: 0 },
+  { label: "Редко", value: 1 },
+  { label: "Периодически", value: 2 },
+  { label: "Часто", value: 3 },
+  { label: "Постоянно", value: 4 },
+];
+
+export function MelatoninQuiz() {
+  const [currentQuestion, setCurrentQuestion] = useState(0);
+  const [answers, setAnswers] = useState<number[]>(Array(10).fill(-1));
+  const [selectedAnswer, setSelectedAnswer] = useState<number>(-1);
+  const [showResults, setShowResults] = useState(false);
+
+  const handleAnswerSelect = (value: string) => {
+    setSelectedAnswer(parseInt(value));
+  };
+
+  const handleNext = () => {
+    if (selectedAnswer === -1) return;
+
+    const newAnswers = [...answers];
+    newAnswers[currentQuestion] = selectedAnswer;
+    setAnswers(newAnswers);
+
+    if (currentQuestion === questions.length - 1) {
+      setShowResults(true);
+    } else {
+      setCurrentQuestion(currentQuestion + 1);
+      setSelectedAnswer(newAnswers[currentQuestion + 1]);
+    }
+  };
+
+  const handlePrevious = () => {
+    if (currentQuestion > 0) {
+      setCurrentQuestion(currentQuestion - 1);
+      setSelectedAnswer(answers[currentQuestion - 1]);
+    }
+  };
+
+  const handleRestart = () => {
+    setCurrentQuestion(0);
+    setAnswers(Array(10).fill(-1));
+    setSelectedAnswer(-1);
+    setShowResults(false);
+  };
+
+  const totalScore = answers.reduce((sum, answer) => sum + (answer >= 0 ? answer : 0), 0);
+  const progress = ((currentQuestion + 1) / questions.length) * 100;
+
+  if (showResults) {
+    return <QuizResults score={totalScore} onRestart={handleRestart} />;
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
+      <Card className="w-full max-w-2xl shadow-xl">
+        <CardHeader className="space-y-4">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-xl sm:text-2xl text-blue-600 dark:text-blue-400">
+              SMART-диагностика мелатонина
+            </CardTitle>
+            <span className="text-sm text-muted-foreground">
+              {currentQuestion + 1} / {questions.length}
+            </span>
+          </div>
+          <Progress value={progress} className="h-2" />
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div>
+            <h3 className="text-lg sm:text-xl font-medium mb-6 text-foreground">
+              {questions[currentQuestion]}
+            </h3>
+            <RadioGroup
+              value={selectedAnswer.toString()}
+              onValueChange={handleAnswerSelect}
+              className="space-y-3"
+            >
+              {answerOptions.map((option) => (
+                <div
+                  key={option.value}
+                  className="flex items-center space-x-3 rounded-lg border border-border p-4 hover:bg-accent transition-colors cursor-pointer"
+                  onClick={() => handleAnswerSelect(option.value.toString())}
+                >
+                  <RadioGroupItem
+                    value={option.value.toString()}
+                    id={`option-${option.value}`}
+                  />
+                  <Label
+                    htmlFor={`option-${option.value}`}
+                    className="flex-1 cursor-pointer text-base"
+                  >
+                    {option.label}
+                  </Label>
+                </div>
+              ))}
+            </RadioGroup>
+          </div>
+
+          <div className="flex gap-3 pt-4">
+            {currentQuestion > 0 && (
+              <Button
+                variant="outline"
+                onClick={handlePrevious}
+                className="flex-1"
+              >
+                Назад
+              </Button>
+            )}
+            <Button
+              onClick={handleNext}
+              disabled={selectedAnswer === -1}
+              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              {currentQuestion === questions.length - 1 ? "Результаты" : "Далее"}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
